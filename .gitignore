@@ -1,0 +1,5 @@
+.vs
+CMakeLists.txt
+CMakeSettings.json
+out
+build
