@@ -5,6 +5,7 @@
 #include <map>
 #include <stdexcept>
 #include <utility>
+#include <cassert>
 
 // DISCLAIMER
 //
@@ -92,15 +93,15 @@
 // whereby the Vector’s elements are of type T. 
 // The Vector class must provide the following functionality:
 
-// Constructors and destructor
+// Constructors and destructor -> DONE -> TESTED
 
-//     A default constructor that sets the length to zero.
-//     A copy constructor and a move constructor that creates a Vector from another Vector.
-//     A constructor that takes a length as an argument and allocates the internal 
-//       data structures accordingly.
+//     A default constructor that sets the length to zero. -> DONE -> TESTED
+//     A copy constructor and a move constructor that creates a Vector from another Vector. -> DONE -> TESTED
+//     A constructor that takes a length as an argument and allocates the internal -> DONE -> TESTED
+//       data structures accordingly. -> DONE -> TESTED
 //     A constructor that takes an initialiser list representing the contents of this Vector, 
-//       allocates the internal data structures and initialises the Vector’s content accordingly.
-//     A destructor.
+//       allocates the internal data structures and initialises the Vector’s content accordingly. -> DONE -> TESTED
+//     A destructor. -> DONE -> TESTED
 
 // Operators and functions
 
@@ -133,8 +134,194 @@ template <typename T>
 class Vector
 {
     // Your implementation of the Vector class starts here
-    Vector 
+public:
 
+    int GetLength() const { return length; }
+    T* GetData() const { return data; }
+    void SetLength(const int length) { this->length = length; }
+    void SetData(T* data) { this->data = data; }
+
+public:
+
+    // a default constructor,
+    // i.e.one that takes no arguments, that initialises the attribute
+    // length with 0 and attribute data with nullptr.
+    Vector() :
+        length(0),
+        data(nullptr)
+    {
+        // print_simple("default constructor called");
+    }
+
+    // a constructor that takes one int argument that holds the length 
+    // of this container.Attribute data should be initialised with a dynamically 
+    // allocated array of double of length length.
+    Vector(const int n) :
+        length(n),
+        data(new T[n])
+    {
+        // print_simple("basic constructor called");
+    }
+
+
+    // a constructor that takes an std::initializer_list<double>.
+    // The list contains values for the data array.Use constructor delegation 
+    // to set the length of this containerand allocate data.Then copy all elements
+    // of the list to data.
+    Vector(const std::initializer_list<T>& l) :
+        Vector((int)l.size())
+    {
+        // std::uninitialized_copy(l.begin(), l.end(), data);
+        int i = 0;
+        for (auto item : l)
+        {
+            data[i] = item;
+            i++;
+        }
+        // print("init_list_constructor called");
+    }
+
+    // a (deep)copy constructor that takes a Container argument.
+    // explicit : only do this if it is exactly stated this way
+    explicit Vector(const Vector<T>& other) :
+        Vector<T>(other.length)
+    {
+        for (int i = 0; i < other.length; i++)
+        {
+            data[i] = other.data[i];
+        }
+        // print("deep-copy constructor called");
+    }
+
+    // a move constructor that takes a Container argument.
+    Vector(Vector<T>&& other) :
+        length(other.length),
+        data(other.data)
+    {
+        // NOTE : we dont do detete[] here, because we still actually use the data
+        // move constructors are meant to actually dodge the copy constructors.
+        other.length = 0;
+        other.data = nullptr;
+        // print("move constructor called");
+    }
+
+    // a destructor that deallocates the dynamically allocated memory 
+    // of the data attribute using delete[].After you have deleted the memory 
+    // it is safe to set the attribute data to nullptr so that even attempt to 
+    // dereference the pointer yields an error.
+    ~Vector()
+    {
+        length = 0;
+        delete[] data;
+        data = nullptr;
+        // print_simple("destructor called");
+    }
+
+    // Create a (deep)copy assignment operator.
+    Vector<T>& operator=(const Vector<T>& other)
+    {
+        if (this != &other)
+        {
+            delete[] data;
+            data = new T[other.length];
+            length = other.length;
+            for (int i = 0; i < length; i++)
+            {
+                data[i] = other.data[i];
+            }
+        }
+        // print("deepcopy assignment called");
+        return *this;
+    }
+
+    // Create a move assignment operator.
+    Vector<T>& operator=(Vector<T>&& other)
+    {
+        if (this != &other)
+        {
+            delete[] data;
+            data = other.data;
+            other.data = nullptr;
+
+            length = other.length;
+            other.length = 0;
+        }
+        // print("move assignment called");
+        return *this;
+    }
+
+    // Create an operator+ that takes one Container argument.
+    // This operator should return a new Container with the 
+    // pointwise sum of all elements of this instance(the left hand side)
+    // and the argument(the right hand side).
+    Vector<T> concat(const Vector<T>& other) const
+    {
+        Vector addition(length + other.length);
+        for (int i = 0; i < length; i++)
+        {
+            addition.data[i] = data[i]; // deepcopy self
+        }
+        for (int i = 0; i < other.length; i++)
+        {
+            addition.data[i + length] = other.data[i]; // deepcopy other
+        }
+
+        // print("addition operator called");
+        return addition;
+    }
+
+    // Create an operator+ that takes one Container argument.
+    // This operator should return a new Container with the 
+    // pointwise sum of all elements of this instance(the left hand side)
+    // and the argument(the right hand side).
+    Vector<T> operator+(const Vector<T>& other) const
+    {
+        assert(length == other.length);
+
+        Vector<T> addition(length);
+        for (int i = 0; i < length; i++)
+        {
+            addition.data[i] = data[i] + other.data[i]; // deepcopy self
+        }
+
+        // print("addition operator called");
+        return addition;
+    }
+
+    // -------- methods -------
+
+    void print_state(const std::string& info) const
+    {
+        print_simple(info);
+        std::cout << " | loc:  " << this << std::endl
+            << " | len:  " << length << std::endl
+            << " | data: " << data << std::endl;
+    }
+
+    void print_data_content() const
+    {
+        std::cout << " | data content : {";
+        for (int i = 0; i < length; i++)
+        {
+            std::cout << " " << data[i] << ", ";
+        }
+        std::cout << "}" << std::endl;
+    }
+
+    void print_simple(const std::string& info) const
+    {
+        std::cout << "--- " << info << std::endl;
+    }
+
+    void print(const std::string& info) const
+    {
+        print_state(info);
+        print_data_content();
+    }
+
+private:
+    int length;
+    T* data;
 };
 
 template<typename T, typename U>
@@ -146,11 +333,78 @@ dot(const Vector<T>& lhs,
     // Your implementation of the dot function starts here
 }
 
-// [JF] Vector Unit test 
-void TestVector() 
+void title(const std::string& title)
 {
-
+    std::cout << "\n----------------------------------" << std::endl;
+    std::cout << title << std::endl;
+    std::cout << "----------------------------------\n" << std::endl;
 }
+
+// [JF] Vector Unit test 
+int unit_test_vector()
+{
+    title("two subjects");
+
+    std::cout << "Vector a({ 1, 2, 3 });" << std::endl;
+    Vector<double> a({ 1, 2, 3 });
+    std::cout << "  a has address " << &a << std::endl;
+    std::cout << "Vector b = { 4, 5, 6 };" << std::endl;
+    Vector<double> b = { 4, 5, 6 };
+    std::cout << "  b has address " << &b << std::endl;
+
+    title("test copy constructor");
+
+    std::cout << "Vector c(a);" << std::endl;
+    Vector<double> c(a);
+    std::cout << "  c has address " << &c << std::endl;
+
+
+    title("d : test addition & move constuctor");
+    // note : this creates a temporary result of a + b, which is then moved to d, and immidiately destroyed
+
+    std::cout << "Vector d = a + b;" << std::endl;
+    Vector<double> d = a + b;
+    std::cout << "  d has address " << &d << std::endl;
+
+    title("e : test first init, then add and move");
+
+    std::cout << "Vector e;" << std::endl;
+    Vector<double> e;
+    std::cout << "  e has address " << &e << std::endl;
+    std::cout << "e = a + b;" << std::endl;
+    e = a + b;
+
+    title("f : test direct move");
+
+    std::cout << "Vector f(std::move(a + b));" << std::endl;
+    Vector<double> f(std::move(a + b));
+    std::cout << "  f has address " << &f << std::endl;
+
+    title("g : test triple addition and move");
+
+    std::cout << "Vector g = a + b + c;" << std::endl;
+    Vector<double> g = a + b + c;
+    std::cout << "  g has address " << &g << std::endl;
+
+    title("h : test first init, then triple addition, and move");
+
+    std::cout << "Vector h;" << std::endl;
+    Vector<double> h;
+    std::cout << "  h has address " << &h << std::endl;
+    std::cout << "h = a + b + c;" << std::endl;
+    h = a + b + c;
+
+    title("i : test triple addition, initalizer list, and move");
+
+    std::cout << "Vector i = { a + b + c };" << std::endl;
+    Vector<double> i = { a + b + c };
+    std::cout << "  i has address " << &i << std::endl;
+
+    title("we are done!");
+
+    return 0;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -240,7 +494,7 @@ class Matrix
 };
 
 // [JF] Matrix unit test
-void TestMatrix() 
+void TestMatrix()
 {
 
 }
@@ -289,19 +543,19 @@ int cg(const Matrix<T>& A, const Vector<T>& b, Vector<T>& x, T tol = (T)1e-8, in
 {
 
 
-// p_0 = r_0 = b - A x_0
-// for k = 0, 1, ..., maxiter-1
-//     alpha_k = dot(r_k, r_k) / dot(A p_k, p_k)
-//     x_(k+1) = x_k + alpha_k p;
-//     r_(k+1) = r_k - alpha_k A p;
+    // p_0 = r_0 = b - A x_0
+    // for k = 0, 1, ..., maxiter-1
+    //     alpha_k = dot(r_k, r_k) / dot(A p_k, p_k)
+    //     x_(k+1) = x_k + alpha_k p;
+    //     r_(k+1) = r_k - alpha_k A p;
 
-//     if dot(r_(k+1), r_(k+1)) < tol*tol
-//        return k;
+    //     if dot(r_(k+1), r_(k+1)) < tol*tol
+    //        return k;
 
-//     beta_k  = dot(r_(k+1), r_(k+1)) / dot(r_k, r_k)
-//     p_(k+1) = r_(k+1) + beta_k p_k
+    //     beta_k  = dot(r_(k+1), r_(k+1)) / dot(r_k, r_k)
+    //     p_(k+1) = r_(k+1) + beta_k p_k
 
-    for(int k = 0 ; k < limit; k++)
+    for (int k = 0; k < limit; k++)
     {
         bool convergence = false;
         if (convergence)
@@ -354,5 +608,7 @@ int main(int argc, char* argv[])
     std::cout << "kaas" << std::endl;
     std::cout << "henk" << std::endl;
     std::cout << "fristi" << std::endl;
+
+    unit_test_vector();
     return 0;
 }
